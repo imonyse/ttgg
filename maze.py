@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 #-*-coding=utf-8-*-
-
 # Copyright (C) 2009 by Huang Wei
 #
 # This program is free software: you can redistribute it and/or modify
@@ -126,6 +125,25 @@ class PuzzleWidget(QWidget):
 
     def tryToMove(self, row, column):
         pass
+
+#        me = self.findChild(QListWidget, "cell_%d_%d" % (row, column))
+#        leftCell = self.findChild(QListWidget, "cell_%d_%d" % (row, column-1))
+#        rightCell = self.findChild(QListWidget, "cell_%d_%d" % (row, column+1))
+#        upperCell = self.findChild(QListWidget, "cell_%d_%d" % (row-1, column))
+#        lowerCell = self.findChild(QListWidget, "cell_%d_%d" % (row+1, column))
+#
+#        for eachCell in (leftCell, rightCell, upperCell, lowerCell):
+#            if not eachCell:
+#                name = eachCell.objectName()
+#                y = int(name[name.indexOf('_') + 1])
+#                x = int(name[name.lastIndexOf('_') + 1])
+#                
+#                if x == 4 and y == 2:
+#                    me.move(QPoint(x,y))
+#                elif 0<=y<=2 and 0<=x<=3:
+#                    me.move(QPoint(x,y))
+#                else:
+#                    return
 
     # 统一在这里管理Drag&Drop的状态. flag为1时，是设定空白格附近的四个格子都可以移动；
     # flag为0是，则是因为有别的格子移了过来，所以设置附近四个格子不可移动
