@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 #-*-coding=utf-8-*-
-"""
-记得小时候玩过这样的移动拼图游戏
 
-"""
 # Copyright (C) 2009 by Huang Wei
 #
 # This program is free software: you can redistribute it and/or modify
@@ -127,7 +124,11 @@ class PuzzleWidget(QWidget):
                 cell.inPlace = 1
                 self.inPlace += 1
 
-    # 统一在这里管理Drag&Drop的状态
+    def tryToMove(self, row, column):
+        pass
+
+    # 统一在这里管理Drag&Drop的状态. flag为1时，是设定空白格附近的四个格子都可以移动；
+    # flag为0是，则是因为有别的格子移了过来，所以设置附近四个格子不可移动
     def changeDragDropStatus(self, row, column, flag):
         me = self.findChild(QListWidget, "cell_%d_%d" % (row, column))
 
@@ -280,6 +281,17 @@ class CellWidget(QListWidget):
             self.parent().changeDragDropStatus(y, x, 0)
         else:
             event.ignore()
+
+    def mouseDoubleClickEvent(self, event):
+        item = self.currentItem()
+        if not item:
+            return
+        
+        name = self.objectName()
+        y = int(name[name.indexOf('_') + 1])
+        x = int(name[name.lastIndexOf('_') + 1])
+
+        self.parent().tryToMove(x, y)
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
