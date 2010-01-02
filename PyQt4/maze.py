@@ -420,6 +420,6 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
-    window.openImage(QString(":happy.jpg"))
+    window.openImage(QString(":7.jpg"))
     window.show()
     sys.exit(app.exec_())
