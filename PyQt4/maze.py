@@ -15,38 +15,42 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""
+A maze game wirtten by PyQt4
+"""
 
 import sys
 import random
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import maze_rc
+import settings
 
-# 这个是左边的示例图片
+# The orginal image will be place in GoalImage Label
 class GoalImage(QLabel):
     def __init__(self, parent=None):
         super(GoalImage, self).__init__(parent)
-        self.setMinimumSize(400, 300)
-        self.setMaximumSize(400, 300)
+        self.setMinimumSize(CellWidth, CellHeight)
+        self.setMaximumSize(CellWidth, CellHeight)
 
-# 这个是右边玩游戏的地方
+# Place to display the discrete picture pieces
 class PuzzleWidget(QWidget):
     def __init__(self, parent=None):
         super(PuzzleWidget, self).__init__(parent)
 
-        # 设置puzzle时，是严格按照对应关系拷贝过去的，所以图片是完备的
-        # 初始化完毕后，在setPuzzle()里一个打乱拷贝的过程会改变此值
-        self.inPlace = 12
+        # inPlace save the value for pieces should be right
+        self.inPlace = settings.MHon * settings.MVet
         layout = QGridLayout()
+        # NOTE: setSpacing(0) is not really correct on KDE4
         layout.setSpacing(0)
 
-        # 绘出里面的游戏格
-        for row in range(3):
-            for column in range(5):
-                # 最后一列空一个地方出来不画格子
-                if column == 4: 
+        # draw the grid
+        for row in range(settings.MVet):
+            for column in range(settings.MHon + 1):
+                # the last piece will be used as swap
+                if column == settings.MHon: 
                     if row == 0:
                         cell = QLabel()
+                        # object name is used to compare its position, so we know whether it's in the correct place
                         cell.setObjectName("cell_%d_%d" % (row,column))
                         layout.addWidget(cell, row, column)
                         continue
@@ -57,8 +61,8 @@ class PuzzleWidget(QWidget):
                 layout.addWidget(cellWidget, row, column)
 
         self.setLayout(layout)
-        self.setMinimumSize(520, 320)
-        self.setMaximumSize(520, 320)
+        #self.setMinimumSize(520, 320)
+        #self.setMaximumSize(520, 320)
 
     # 在设置puzzle的时候调用，把图片打乱
     # 挨着空格的那个特殊格子是不可以换地方的
