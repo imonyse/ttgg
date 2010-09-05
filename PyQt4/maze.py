@@ -22,59 +22,51 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import maze_rc
 
-# 这个是左边的示例图片
+# 定义的水平和垂直的块数
+hcnt = 5
+vcnt = 5
+
+# 这个是右边的示例图片
 class GoalImage(QLabel):
     def __init__(self, parent=None):
         super(GoalImage, self).__init__(parent)
-        self.setMinimumSize(400, 300)
-        self.setMaximumSize(400, 300)
+        self.setMinimumSize(500, 500)
+        self.setMaximumSize(500, 500)
 
-# 这个是右边玩游戏的地方
+# 这个是左边玩游戏的地方
 class PuzzleWidget(QWidget):
     def __init__(self, parent=None):
         super(PuzzleWidget, self).__init__(parent)
 
-        # 设置puzzle时，是严格按照对应关系拷贝过去的，所以图片是完备的
+        # inPlace -> 各就各位了:)
         # 初始化完毕后，在setPuzzle()里一个打乱拷贝的过程会改变此值
-        self.inPlace = 12
+        self.inPlace = hcnt*vcnt
         layout = QGridLayout()
         layout.setSpacing(0)
 
         # 绘出里面的游戏格
-        for row in range(3):
-            for column in range(5):
+        for row in range(vcnt):
+            for column in range(hcnt):
                 # 最后一列空一个地方出来不画格子
-                if column == 4: 
-                    if row == 0:
-                        cell = QLabel()
-                        cell.setObjectName("cell_%d_%d" % (row,column))
-                        layout.addWidget(cell, row, column)
-                        continue
-                    elif row == 1:
-                        continue
                 cellWidget = CellWidget()
                 cellWidget.setObjectName("cell_%d_%d" % (row, column))
                 layout.addWidget(cellWidget, row, column)
 
         self.setLayout(layout)
-        self.setMinimumSize(520, 320)
-        self.setMaximumSize(520, 320)
+        self.setMinimumSize(520, 520)
+        self.setMaximumSize(520, 520)
 
     # 在设置puzzle的时候调用，把图片打乱
     # 挨着空格的那个特殊格子是不可以换地方的
+    # 此函数，从(column,row)处取出一片 然后追加到widget末尾
     def takeItemInsert(self, row, column):
-        if column == 3 and row == 2:
-            return
-        
         cellList = []
         itemList = []
         cellWidget = self.findChild(QListWidget, "cell_%d_%d" % (row,column))
         if cellWidget:
             cellList.append(cellWidget)
 
-            for y in range(column+1, 4):
-                if row == 2 and y == 3:
-                    continue
+            for y in range(column+1, hcnt):
                 cell = self.findChild(QListWidget, "cell_%d_%d" % (row,y))
                 if cell.inPlace:
                     self.inPlace -= 1
@@ -83,10 +75,8 @@ class PuzzleWidget(QWidget):
                 item = cell.takeItem(0)
                 itemList.append(item)
 
-            for x in range(row+1, 3):
-                for y in range(4):
-                    if x == 2 and y == 3:
-                        continue
+            for x in range(row+1, vcnt):
+                for y in range(hcnt):
                     cell = self.findChild(QListWidget, "cell_%d_%d" % (x,y))
                     if cell.inPlace:
                         self.inPlace -= 1
@@ -179,11 +169,9 @@ class PuzzleWidget(QWidget):
         pieceItem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled)
 
     def clear(self):
-        self.inPlace = 12
-        for row in range(3):
-            for column in range(5):
-                if column == 4 and row < 2:
-                    continue
+        self.inPlace = hcnt*vcnt
+        for row in range(vcnt):
+            for column in range(hcnt):
                 cellWidget = self.findChild(QListWidget, "cell_%d_%d" % (row, column))
                 cellWidget.clear()
 
@@ -292,7 +280,7 @@ class CellWidget(QListWidget):
                 self.inPlace = 1
                 self.parent().inPlace += 1
 
-                if self.parent().inPlace == 12:
+                if self.parent().inPlace == hcnt*vcnt:
                     self.parent().emit(SIGNAL("puzzleCompleted()"))
                     return
             
@@ -339,58 +327,47 @@ class MainWindow(QMainWindow):
             self.setupPuzzle()
 
     def setCompleted(self):
-        button = QMessageBox.question(self, u"问题", u"拼图完成\n游戏将重新开始", QMessageBox.Ok | QMessageBox.No, QMessageBox.No)
+        button = QMessageBox.question(self, u"问题", u"拼图完成\n游戏将重新开始", 
+                                      QMessageBox.Ok | QMessageBox.No, QMessageBox.No)
         if button == QMessageBox.Ok:
             self.setupPuzzle()
 
     def setupPuzzle(self):      
-        self.puzzleImage = self.image.copy(0, 0, self.image.width(), self.image.height()).scaled(400, 300, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        self.puzzleImage = self.image.copy(0, 0, self.image.width(), 
+                                           self.image.height()).scaled(500, 500, 
+                                                                       Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         
         self.puzzleWidget.clear()
 
-        for y in range(3):
-            for x in range(4):
+        for y in range(vcnt):
+            for x in range(hcnt):
                 pieceImage = self.puzzleImage.copy(x*100, y*100, 100, 100)
                 self.puzzleWidget.addPiece(pieceImage, QPoint(x,y))
 
+        # 打乱图片位置。打乱后的图片序列必须和原图奇偶性相同。
         random.seed(QCursor.pos().x() ^ QCursor.pos().y())
-
-        # 打乱图片位置
-        eo_check = 0            
-        for x in range(3):
-            for y in range(4):
+        # eo_check 记录图片追加到最后 需要移动多少距离
+        eo_check = 0
+        for row in range(1,vcnt+1):
+            for col in range(1, hcnt+1):
                 if random.random() < 0.5:
-                    # 9个格子的奇数列，变换位移次数之和必须为偶数
-                    eo_check += 12 - (4*x + y + 1)
-                    self.puzzleWidget.takeItemInsert(x,y)
-        if eo_check % 2 == 1:
+                    eo_check += vcnt*hcnt - (vcnt*(row-1) + col)
+                    self.puzzleWidget.takeItemInsert(row-1, col-1)
+
+        # 共随机移动的距离奇偶校验
+        if eo_check %2 != 0:
             eo_check += 1
-            self.puzzleWidget.takeItemInsert(2,2)
+            # 将倒数第二个格子和倒数第一个交换位置
+            self.puzzleWidget.takeItemInsert(vcnt-1, hcnt-2)
 
-        # 一切图片都到位后，设置好初始状态(只有靠近那个特殊格子的图片才能动)
-        self.puzzleWidget.changeDragDropStatus(2, 4, 1)
+        # 一切图片都到位后，设置好初始状态(只有靠近空格的图片才能动)
+        specialCell = self.puzzleWidget.findChild(QListWidget, "cell_%d_%d" % (vcnt, hcnt))
+        self.puzzleWidget.changeDragDropStatus(vcnt-1, hcnt-1, 1)
         
-        imageLabel = self.puzzleWidget.findChild(QLabel, "cell_0_4")
-        if imageLabel:
-            imageLabel.setPixmap(self.puzzleImage.scaled(100, 100, Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
-                                                 
-    def setupPuzzleQQ(self):
-        QMessageBox.information(self, u"我来也", u"看我的乾坤大挪移!", QMessageBox.Ok)
-        self.puzzleImage = self.image.copy(0, 0, self.image.width(), self.image.height()).scaled(400, 300, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-        
-        self.puzzleWidget.clear()
-
-        for y in range(3):
-            for x in range(4):
-                pieceImage = self.puzzleImage.copy(x*100, y*100, 100, 100)
-                self.puzzleWidget.addPiece(pieceImage, QPoint(x,y))
-
-        self.puzzleWidget.changeDragDropStatus(2, 4, 1)
-        
-        imageLabel = self.puzzleWidget.findChild(QLabel, "cell_0_4")
-        if imageLabel:
-            imageLabel.setPixmap(self.puzzleImage.scaled(100, 100, Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
-        
+        #imageLabel = self.puzzleWidget.findChild(QLabel, "cell_0_4")
+        #if imageLabel:
+        #    imageLabel.setPixmap(self.puzzleImage.scaled(100, 100, Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
+                                                    
 
     def setupMenus(self):
         fileMenu = self.menuBar().addMenu(QString(u"文件(&F)"))
@@ -398,12 +375,10 @@ class MainWindow(QMainWindow):
         exitAction = fileMenu.addAction(QString(u"退出(&Q)"))
         gameMenu = self.menuBar().addMenu(QString(u"游戏(&G)"))
         restartAction = gameMenu.addAction(QString(u"重新开始(&R)"))
-        summonAction = gameMenu.addAction(QString(u"召唤黄大侠!(&M)"))
 
         self.connect(openAction, SIGNAL("triggered()"), self.openImage)
         self.connect(exitAction, SIGNAL("triggered()"), qApp, SLOT("quit()"))
         self.connect(restartAction, SIGNAL("triggered()"), self.setupPuzzle)    
-        self.connect(summonAction, SIGNAL("triggered()"), self.setupPuzzleQQ)
 
     def setupWidgets(self):
         frame = QFrame()
