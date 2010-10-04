@@ -7,7 +7,7 @@
 # 打乱前后两种图片的奇偶性一致即可。
 
 import sys, random
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui, phonon
 
 FORMWIDTH     = 324
 FORMHEIGHT    = 354
@@ -18,12 +18,34 @@ BLANKPIECE    = "piece44"
 
 check         = 0             # 矩阵奇偶性校验 原始图案矩阵为偶数列
 
+# 声音 来了
+class StepPlayer(phonon.Phonon.MediaObject):
+    def __init__(self):
+        super(StepPlayer, self).__init__()
+        self.source = phonon.Phonon.MediaSource("step.wav")
+        self.setCurrentSource(self.source)
+
+        self.audio  = phonon.Phonon.AudioOutput(phonon.Phonon.MusicCategory)
+
+        phonon.Phonon.createPath(self, self.audio)
+
+# 完成拼图后播放的声音
+class YeahPlayer(phonon.Phonon.MediaObject):
+    def __init__(self):
+        super(YeahPlayer, self).__init__()
+        self.source = phonon.Phonon.MediaSource("yeah.wav")
+        self.setCurrentSource(self.source)
+
+        self.audio  = phonon.Phonon.AudioOutput(phonon.Phonon.MusicCategory)
+
+        phonon.Phonon.createPath(self, self.audio)    
+
 class Piece(QtGui.QGraphicsWidget):
     def __init__(self, image, parent=None):
         super(Piece, self).__init__(parent)
         self.image   = image
-        self.next    = None     # 将要和自己交换位置的那个piece
-
+        self.player  = StepPlayer()
+        self.yeah    = YeahPlayer()
     # 查找当前piece四周的pieces 判断其是否为blank
     # 若找到则返回此piece，否则返回None
     def findBlank(self):
@@ -96,6 +118,8 @@ class Piece(QtGui.QGraphicsWidget):
     def mousePressEvent(self, event):
         blank = self.findBlank()
         if blank:
+            self.player.stop()
+            self.player.play()
             blank_len = blank.sum()
             curr_len  = self.sum()
             self.swap(blank)
@@ -110,10 +134,12 @@ class Piece(QtGui.QGraphicsWidget):
             for item in self.scene().items():
                 if item.objectName() == QtCore.QString(BLANKPIECE):
                     item.setVisible(True)
+                    self.player.stop()
+                    self.yeah.stop()
+                    self.yeah.play()
             self.scene().update()
         
         super(Piece, self).mousePressEvent(event)
-
 
 
 class View(QtGui.QGraphicsView):
@@ -172,7 +198,6 @@ class MainForm(QtGui.QDialog):
 
     def setup(self):
         for item in self.view.scene.items():
-            item.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
             if item.objectName() == QtCore.QString(BLANKPIECE):
                 item.setVisible(False)
 
@@ -192,7 +217,9 @@ class MainForm(QtGui.QDialog):
                 continue
             elif check == 0:
                 break
-                            
+
+        for item in self.view.scene.items():
+            item.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
                     
 if __name__ == '__main__':
 
