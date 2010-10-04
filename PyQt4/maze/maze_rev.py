@@ -18,17 +18,6 @@ BLANKPIECE    = "piece44"
 FILENAME      = "beauty.jpg"
 check         = 0             # 矩阵奇偶性校验 原始图案矩阵为偶数列
 
-# 声音 来了
-class StepPlayer(phonon.Phonon.MediaObject):
-    def __init__(self):
-        super(StepPlayer, self).__init__()
-        self.source = phonon.Phonon.MediaSource("step.wav")
-        self.setCurrentSource(self.source)
-
-        self.audio  = phonon.Phonon.AudioOutput(phonon.Phonon.MusicCategory)
-
-        phonon.Phonon.createPath(self, self.audio)
-
 # 完成拼图后播放的声音
 class YeahPlayer(phonon.Phonon.MediaObject):
     def __init__(self):
@@ -117,8 +106,6 @@ class Piece(QtGui.QGraphicsWidget):
     def mousePressEvent(self, event):
         blank = self.findBlank()
         if blank:
-            self.scene().parent().parent().step.stop()
-            self.scene().parent().parent().step.play()
             blank_len = blank.sum()
             curr_len  = self.sum()
             self.swap(blank)
@@ -133,7 +120,6 @@ class Piece(QtGui.QGraphicsWidget):
             for item in self.scene().items():
                 if item.objectName() == QtCore.QString(BLANKPIECE):
                     item.setVisible(True)
-                    self.scene().parent().parent().step.stop()
                     self.scene().parent().parent().yeah.stop()
                     self.scene().parent().parent().yeah.play()
             self.scene().update()
@@ -164,9 +150,7 @@ class MainForm(QtGui.QWidget):
         self.setMinimumSize(FORMWIDTH, FORMHEIGHT)
         self.setMaximumSize(FORMWIDTH, FORMHEIGHT)
 
-        self.step    = StepPlayer()
         self.yeah    = YeahPlayer()
-
         self.view    = View()
         self.sButton = QtGui.QPushButton(u"开始(&S)")
         self.qButton = QtGui.QPushButton(u"原图(&O)")
