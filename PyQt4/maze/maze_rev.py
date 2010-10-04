@@ -15,7 +15,7 @@ SCENESIZE     = 300
 COUNT         = 5
 PIECESIZE     = SCENESIZE/COUNT
 BLANKPIECE    = "piece44"
-
+FILENAME      = "beauty.jpg"
 check         = 0             # 矩阵奇偶性校验 原始图案矩阵为偶数列
 
 # 声音 来了
@@ -44,8 +44,7 @@ class Piece(QtGui.QGraphicsWidget):
     def __init__(self, image, parent=None):
         super(Piece, self).__init__(parent)
         self.image   = image
-        self.player  = StepPlayer()
-        self.yeah    = YeahPlayer()
+
     # 查找当前piece四周的pieces 判断其是否为blank
     # 若找到则返回此piece，否则返回None
     def findBlank(self):
@@ -118,8 +117,8 @@ class Piece(QtGui.QGraphicsWidget):
     def mousePressEvent(self, event):
         blank = self.findBlank()
         if blank:
-            self.player.stop()
-            self.player.play()
+            self.scene().parent().parent().step.stop()
+            self.scene().parent().parent().step.play()
             blank_len = blank.sum()
             curr_len  = self.sum()
             self.swap(blank)
@@ -134,10 +133,16 @@ class Piece(QtGui.QGraphicsWidget):
             for item in self.scene().items():
                 if item.objectName() == QtCore.QString(BLANKPIECE):
                     item.setVisible(True)
-                    self.player.stop()
-                    self.yeah.stop()
-                    self.yeah.play()
+                    self.scene().parent().parent().step.stop()
+                    self.scene().parent().parent().yeah.stop()
+                    self.scene().parent().parent().yeah.play()
             self.scene().update()
+
+            self.scene().parent().parent().timer.stop()
+            self.scene().parent().parent().hasStart = 0
+            QtGui.QMessageBox.information(self.scene().parent().parent(), 
+                                          u"完成", u"恭喜啊, 你做到了!\n用时%s" % self.scene().parent().parent().display.text(), 
+                                          QtGui.QMessageBox.Ok, QtGui.QMessageBox.NoButton)
         
         super(Piece, self).mousePressEvent(event)
 
@@ -153,37 +158,76 @@ class View(QtGui.QGraphicsView):
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
 
-class MainForm(QtGui.QDialog):
+class MainForm(QtGui.QWidget):
     def __init__(self, parent=None):
         super(MainForm,self).__init__(parent)
         self.setMinimumSize(FORMWIDTH, FORMHEIGHT)
         self.setMaximumSize(FORMWIDTH, FORMHEIGHT)
+
+        self.step    = StepPlayer()
+        self.yeah    = YeahPlayer()
 
         self.view    = View()
         self.sButton = QtGui.QPushButton(u"开始(&S)")
         self.qButton = QtGui.QPushButton(u"原图(&O)")
         self.qButton.setFocusPolicy(QtCore.Qt.NoFocus)
 
+        self.display = QtGui.QLabel(u"  0小时  0分钟  0秒")
+        self.timer   = QtCore.QTimer()
+        self.time    = QtCore.QTime()
+        self.hasStart= 0
+
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.view)
         bLayout = QtGui.QHBoxLayout()
         bLayout.addWidget(self.sButton)
         bLayout.addWidget(self.qButton)
+        bLayout.addWidget(self.display)
         layout.addLayout(bLayout)
         self.setLayout(layout)
+
+        pixmap = QtGui.QPixmap()
+        if not pixmap.load(FILENAME):
+            QtGui.QMessageBox.warning(self, u"载入", u"无法载入图片 'beauty.jpg'", 
+                                      QtGui.QMessageBox.Cancel, QtGui.QMessageBox.NoButton)
+            sys.exit(1)
+
+        self.icon = QtGui.QIcon(pixmap)
+        self.setWindowIcon(self.icon)
 
         self.load()
         self.setWindowTitle(u"滑块拼图")
         self.connect(self.sButton, QtCore.SIGNAL("clicked()"), self.setup)
         self.connect(self.qButton, QtCore.SIGNAL("clicked()"), self.load)
+        self.connect(self.timer,   QtCore.SIGNAL("timeout()"), self.timeout)
+
+
+    def timeout(self):
+        if self.hasStart:
+            el = self.time.elapsed()
+
+            s  = el/1000
+            m  = s/60               
+            if m > 0:
+                s  = s%60
+            h  = m/60
+            if h > 0:
+                m  = m%60
+            
+            if h < 24:
+                self.display.setText(u" %2d小时 %2d分钟 %2d秒" % (h,m,s))
+            else:
+                self.display.setText(u" 太久了,拒绝显示...")
 
     def load(self):
         self.view.scene.clear()
+        self.hasStart = 0
+        self.display.setText(u"  0小时  0分钟  0秒")
 
-        fileName = 'beauty.jpg'
         image = QtGui.QImage()
-        if not image.load(fileName):
-            QtGui.QMessageBox.warning(self, u"载入", u"无法载入图片 'beauty.jpg'", QtGui.QMessageBox.Cancel, QtGui.QMessageBox.NoButton)
+        if not image.load(FILENAME):
+            QtGui.QMessageBox.warning(self, u"载入", u"无法载入图片 'beauty.jpg'", 
+                                      QtGui.QMessageBox.Cancel, QtGui.QMessageBox.NoButton)
             sys.exit(1)
 
         for i in range(COUNT):
@@ -220,6 +264,10 @@ class MainForm(QtGui.QDialog):
 
         for item in self.view.scene.items():
             item.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
+
+        self.time.restart()
+        self.timer.start()
+        self.hasStart = 1
                     
 if __name__ == '__main__':
 
