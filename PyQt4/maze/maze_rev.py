@@ -36,6 +36,7 @@ class Piece(QtGui.QGraphicsWidget):
         self.setPos(pos.x(), pos.y())
         self.animation = QtCore.QPropertyAnimation(self, "geometry")
         self.animation.setDuration(500)
+        self.connect(self.animation, QtCore.SIGNAL("valueChanged(const QVariant)"), self.bravo)
 
     # 查找当前piece四周的pieces 判断其是否为blank
     # 若找到则返回此piece，否则返回None
@@ -58,10 +59,10 @@ class Piece(QtGui.QGraphicsWidget):
     def check(self):
         for item in self.scene().items():
             name = item.objectName()
-            ox = int(name[-2])
-            oy = int(name[-1])
-            cx = item.pos().toPoint().x()/(PIECESIZE+1)
-            cy = item.pos().toPoint().y()/(PIECESIZE+1)
+            ox = float(name[-2])
+            oy = float(name[-1])
+            cx = item.pos().x()/(PIECESIZE+1)
+            cy = item.pos().y()/(PIECESIZE+1)
 
             if ox != cx or oy != cy:
                 return False
@@ -74,7 +75,6 @@ class Piece(QtGui.QGraphicsWidget):
         y = self.pos().y()/(PIECESIZE+1)
         return x + COUNT*y
 
-    # @other: Piece
     # 现在，我们有了动画支持
     def swap(self, other, anim=False):
         o = other.pos()
@@ -128,6 +128,9 @@ class Piece(QtGui.QGraphicsWidget):
                 elif check == 1:
                     check = 0
 
+        super(Piece, self).mousePressEvent(event)
+
+    def bravo(self):
         if self.check():
             for item in self.scene().items():
                 if item.objectName() == QtCore.QString(BLANKPIECE):
@@ -142,7 +145,6 @@ class Piece(QtGui.QGraphicsWidget):
                                           u"完成", u"恭喜啊, 你做到了!\n用时%s" % self.scene().parent().parent().display.text(), 
                                           QtGui.QMessageBox.Ok, QtGui.QMessageBox.NoButton)
         
-        super(Piece, self).mousePressEvent(event)
 
 
 class View(QtGui.QGraphicsView):
