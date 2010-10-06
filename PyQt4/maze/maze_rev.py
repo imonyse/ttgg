@@ -30,9 +30,12 @@ class YeahPlayer(phonon.Phonon.MediaObject):
         phonon.Phonon.createPath(self, self.audio)    
 
 class Piece(QtGui.QGraphicsWidget):
-    def __init__(self, image, parent=None):
+    def __init__(self, image, pos, parent=None):
         super(Piece, self).__init__(parent)
-        self.image   = image
+        self.image     = image
+        self.setPos(pos.x(), pos.y())
+        self.animation = QtCore.QPropertyAnimation(self, "geometry")
+        self.animation.setDuration(500)
 
     # 查找当前piece四周的pieces 判断其是否为blank
     # 若找到则返回此piece，否则返回None
@@ -72,12 +75,21 @@ class Piece(QtGui.QGraphicsWidget):
         return x + COUNT*y
 
     # @other: Piece
-    def swap(self, other):
+    # 现在，我们有了动画支持
+    def swap(self, other, anim=False):
         o = other.pos()
         c = self.pos()
 
-        self.setPos(o)
-        other.setPos(c)
+        if anim == False:
+            self.setPos(o)
+            other.setPos(c)
+        elif anim == True:
+            self.animation.setStartValue(QtCore.QRect(c.x(),c.y(),
+                                                      PIECESIZE,PIECESIZE))
+            self.animation.setEndValue(QtCore.QRect(o.x(),o.y(),
+                                                PIECESIZE,PIECESIZE))
+            other.setPos(c)
+            self.animation.start()
         # 重绘整个scene 不然显示会不正常
         self.scene().update()
 
@@ -108,7 +120,7 @@ class Piece(QtGui.QGraphicsWidget):
         if blank:
             blank_len = blank.sum()
             curr_len  = self.sum()
-            self.swap(blank)
+            self.swap(blank, True)
             if abs(curr_len-blank_len) % 2 == 0:
                 global check
                 if check == 0:
@@ -216,9 +228,8 @@ class MainForm(QtGui.QWidget):
 
         for i in range(COUNT):
             for j in range(COUNT):
-                piece = Piece(image.copy(i*(PIECESIZE+1),j*(PIECESIZE+1),PIECESIZE,PIECESIZE))
+                piece = Piece(image.copy(i*(PIECESIZE+1),j*(PIECESIZE+1),PIECESIZE,PIECESIZE), QtCore.QPointF(i*(PIECESIZE+1),j*(PIECESIZE+1)))
                 piece.setObjectName("piece%d%d" % (i,j))
-                piece.setPos(i*(PIECESIZE+1),j*(PIECESIZE+1))
                 piece.setAcceptedMouseButtons(QtCore.Qt.NoButton)
                 self.view.scene.addItem(piece)
 
