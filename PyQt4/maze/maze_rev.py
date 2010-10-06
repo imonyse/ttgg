@@ -10,7 +10,7 @@ import sys, random
 from PyQt4 import QtCore, QtGui, phonon
 
 FORMWIDTH     = 324
-FORMHEIGHT    = 354
+FORMHEIGHT    = 374
 SCENESIZE     = 300
 COUNT         = 5
 PIECESIZE     = SCENESIZE/COUNT
@@ -180,6 +180,9 @@ class MainForm(QtGui.QWidget):
         bLayout.addWidget(self.qButton)
         bLayout.addWidget(self.display)
         layout.addLayout(bLayout)
+
+        self.copyright = QtGui.QLabel(u"Copyright 2010 »ÆÎ° <coderweasel@gmail.com>")
+        layout.addWidget(self.copyright)
         self.setLayout(layout)
 
         pixmap = QtGui.QPixmap()
