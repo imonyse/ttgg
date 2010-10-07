@@ -170,7 +170,7 @@ class MainForm(QtGui.QWidget):
         self.qButton = QtGui.QPushButton(u"原图(&O)")
         self.qButton.setFocusPolicy(QtCore.Qt.NoFocus)
 
-        self.display = QtGui.QLabel(u"  0小时  0分钟  0秒")
+        self.display = QtGui.QLabel()
         self.timer   = QtCore.QTimer()
         self.time    = QtCore.QTime()
         self.hasStart= 0
@@ -221,7 +221,7 @@ class MainForm(QtGui.QWidget):
     def load(self):
         self.view.scene.clear()
         self.hasStart = 0
-        self.display.setText(u"  0小时  0分钟  0秒")
+        self.display.setText(u"2010年 黄伟 倾情奉献")
 
         image = QtGui.QImage()
         if not image.load(FILENAME):
