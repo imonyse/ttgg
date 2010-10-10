@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 #-*-coding:gb18030-*-
+
+# Copyright 2010 Huang Wei <coderweasel@gmail.com>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 # 原理：把矩阵的图片看成一个完整的数列；
 # 把游戏看作移动空白格，使图片复原的过程。
 # 空白格的移动对数列奇偶性不会产生影响。
